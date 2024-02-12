@@ -58,12 +58,10 @@ class BTSolver:
             av = assignedVars.pop(0)
             for neighbor in self.network.getNeighborsOfVariable(av):
                 if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(av.getAssignment()):
+                    self.trail.push(neighbor)
                     neighbor.removeValueFromDomain(av.getAssignment())
-                    if neighbor.domain.size() == 1:
-                        self.trail.push(neighbor)
-                        neighbor.assignValue(neighbor.domain.values[0])      
-                    modified[neighbor] = neighbor.getDomain()
-        return (modified, self.assignmentsCheck())
+                    modified[neighbor] = neighbor.getDomain()            
+        return (modified, self.assignmentsCheck)
 
     # =================================================================
 	# Arc Consistency
