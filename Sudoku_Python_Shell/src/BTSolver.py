@@ -49,7 +49,7 @@ class BTSolver:
     """
     def forwardChecking ( self ):
         assignedVars = []
-        for c in self.network.constraints:
+        for c in self.network.getModifiedConstraints():
             for v in c.vars:
                 if v.isAssigned():
                     assignedVars.append(v)
@@ -60,7 +60,9 @@ class BTSolver:
                 if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(av.getAssignment()):
                     self.trail.push(neighbor)
                     neighbor.removeValueFromDomain(av.getAssignment())
-                    modified[neighbor] = neighbor.getDomain()            
+                    modified[neighbor] = neighbor.getDomain() 
+                    if neighbor.domain.size() == 0:
+                        return (modified, False)
         return (modified, self.assignmentsCheck)
 
     # =================================================================
