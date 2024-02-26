@@ -133,7 +133,7 @@ class BTSolver:
     """
     def getMRV ( self ):
         unAssignedVars = []
-        for c in self.network.constraints():
+        for c in self.network.constraints:
             for v in c.vars:
                 if not v.isAssigned():
                     unAssignedVars.append(v)
@@ -141,7 +141,7 @@ class BTSolver:
         for curVar in unAssignedVars:
             if curMin == None:
                 curMin = curVar
-            elif len(curVar.getDomain()) < len(curMin.getDomain()):
+            elif curVar.domain.size() < curMin.domain.size():
                 curMin = curVar
         return curMin
 
@@ -184,7 +184,18 @@ class BTSolver:
                 The LCV is first and the MCV is last
     """
     def getValuesLCVOrder ( self, v ):
-        return None
+        lcvOrder = []
+        for val in v.getValues():
+            count = 0
+            for neighbor in self.network.getNeighborsOfVariable(v):
+                if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(val):
+                    count += 1
+            lcvOrder.append((val, count))
+        lcvOrder.sort(key = lambda x: x[1])
+        sortedLCVs = []
+        for domVal in lcvOrder:
+            sortedLCVs.append(domVal[0])
+        return sortedLCVs
 
     """
          Optional TODO: Implement your own advanced Value Heuristic
