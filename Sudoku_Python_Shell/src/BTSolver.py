@@ -102,7 +102,28 @@ class BTSolver:
                 The bool is true if assignment is consistent, false otherwise.
     """
     def norvigCheck ( self ):
-        return ({}, False)
+        assignedVars = []
+        for c in self.network.getModifiedConstraints():
+            for v in c.vars:
+                if v.isAssigned():
+                    assignedVars.append(v)
+        modified = dict()
+        while len(assignedVars) != 0:
+            av = assignedVars.pop(0)
+            unassignedNeighbors = []
+            for neighbor in self.network.getNeighborsOfVariable(av):
+                if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(av.getAssignment()):
+                    self.trail.push(neighbor)
+                    unassignedNeighbors.append(neighbor)
+                    neighbor.removeValueFromDomain(av.getAssignment()) 
+                    if neighbor.domain.size() == 0:
+                        return (modified, False)
+            if len(unassignedNeighbors) == 1:
+                self.trail.push(unassignedNeighbors[0])
+                modified[unassignedNeighbors[0]] = unassignedNeighbors[0].domain.values[0]
+                unassignedNeighbors[0].assignValue(unassignedNeighbors[0].domain.values[0])
+                assignedVars.append(unassignedNeighbors[0])
+        return (modified, self.assignmentsCheck)
 
     """
          Optional TODO: Implement your own advanced Constraint Propagation
@@ -153,8 +174,33 @@ class BTSolver:
                 If there are multiple variables that have the same smallest domain with the same number of unassigned neighbors, add them to the list of Variables.
                 If there is only one variable, return the list of size 1 containing that variable.
     """
+    def getDegree( self, var ):
+        count = 0
+        for neighbor in self.network.getNeighborsOfVariable(var):
+            if neighbor.isChangeable and not neighbor.isAssigned():
+                count += 1
+        return count
+
     def MRVwithTieBreaker ( self ):
-        return None
+        unAssignedVars = []
+        for c in self.network.constraints:
+            for v in c.vars:
+                if not v.isAssigned():
+                    unAssignedVars.append(v)
+        curMin = []
+        for curVar in unAssignedVars:
+            if len(curMin) == 0:
+                curMin = [curVar]
+            elif curVar.domain.size() < curMin[0].domain.size():
+                curMin = [curVar]
+            elif curVar.domain.size() == curMin[0].domain.size():
+                if self.getDegree(curVar) > self.getDegree(curMin[0]):
+                    curMin = [curVar]
+                elif self.getDegree(curVar) == self.getDegree(curMin[0]):
+                    curMin.append(curVar)
+        if (len(curMin)==0):
+            return [None]
+        return curMin
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
