@@ -107,23 +107,30 @@ class BTSolver:
             for v in c.vars:
                 if v.isAssigned():
                     assignedVars.append(v)
-        modified = dict()
         while len(assignedVars) != 0:
             av = assignedVars.pop(0)
-            unassignedNeighbors = []
             for neighbor in self.network.getNeighborsOfVariable(av):
                 if neighbor.isChangeable and not neighbor.isAssigned() and neighbor.getDomain().contains(av.getAssignment()):
                     self.trail.push(neighbor)
-                    unassignedNeighbors.append(neighbor)
-                    neighbor.removeValueFromDomain(av.getAssignment()) 
+                    neighbor.removeValueFromDomain(av.getAssignment())
                     if neighbor.domain.size() == 0:
-                        return (modified, False)
-            if len(unassignedNeighbors) == 1:
-                self.trail.push(unassignedNeighbors[0])
-                modified[unassignedNeighbors[0]] = unassignedNeighbors[0].domain.values[0]
-                unassignedNeighbors[0].assignValue(unassignedNeighbors[0].domain.values[0])
-                assignedVars.append(unassignedNeighbors[0])
-        return (modified, self.assignmentsCheck)
+                        return ({}, False)
+        for c in self.network.getConstraints():
+            for val in range(1, self.gameboard.N + 1):
+                availpos = 0
+                varCanAssign = None
+                for v in c.vars:
+                    if availpos > 1:
+                        continue
+                    if v.getDomain().contains(val):
+                        availpos += 1
+                        varCanAssign = v
+                if (availpos == 1 and not varCanAssign.isAssigned()):
+                    self.trail.push(varCanAssign)
+                    varCanAssign.assignValue(val)
+                if (availpos == 0):
+                    return ({}, False)
+        return ({}, self.assignmentsCheck)
 
     """
          Optional TODO: Implement your own advanced Constraint Propagation
@@ -194,13 +201,10 @@ class BTSolver:
             elif curVar.domain.size() < curMin[0].domain.size():
                 curMin = [curVar]
             elif curVar.domain.size() == curMin[0].domain.size():
-                if self.getDegree(curVar) > self.getDegree(curMin[0]):
-                    curMin = [curVar]
-                elif self.getDegree(curVar) == self.getDegree(curMin[0]):
-                    curMin.append(curVar)
+                curMin.append(curVar)
         if (len(curMin)==0):
             return [None]
-        return curMin
+        return [max(curMin, key = lambda x: self.getDegree(x))]
 
     """
          Optional TODO: Implement your own advanced Variable Heuristic
